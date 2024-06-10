@@ -38,7 +38,7 @@ defmodule Phys3D do
 
     scene = Scene.init(Map.put(%{}, body_id, body))
 
-    {obj, _mtl} = Model.load("sphere_ex")
+    {obj, _mtl} = Model.load("sphere_ex_ex")
     mesh = Mesh.new(obj.v, obj.fv, obj[:fn])
 
     state = %{
@@ -107,7 +107,7 @@ defmodule Phys3D do
 
     sensitivity = state.dt / 100_000
     x_offset = (x - lx) * sensitivity
-    y_offset = (ly - y) * sensitivity
+    y_offset = (y - ly) * sensitivity
 
     new_yaw = state.camera.yaw + x_offset
     new_pitch = state.camera.pitch + y_offset
@@ -143,9 +143,9 @@ defmodule Phys3D do
   end
 
   def handle_info(:update, state) do
-    :wx.batch(fn ->
+    # :wx.batch(fn ->
       render(state)
-    end)
+    # end)
 
     state = update_camera(state)
 
@@ -171,7 +171,7 @@ defmodule Phys3D do
     draw(state)
     :wxGLCanvas.swapBuffers(canvas)
     send(self(), :update)
-    IO.inspect(state)
+    # IO.inspect(state)
     :ok
   end
 
@@ -262,12 +262,12 @@ defmodule Phys3D do
   def create_matrices(%{camera: camera}) do
     model = Mat4.identity()
     view = Mat4.look_at(camera.pos, Vec3.add(camera.pos, camera.front), camera.up)
-    projection = Mat4.perspective(:math.pi() / 4, 800.0 / 600.0, 0.1, 100.0)
+    projection = Mat4.perspective(:math.pi() / 4, 1200.0 / 800.0, 0.1, 100.0)
 
     {model, view, projection}
   end
 
   def set_uniform_matrix(location, matrix) do
-    :gl.uniformMatrix4fv(location, :gl_const.gl_false(), [Mat4.flatten(matrix)])
+    :gl.uniformMatrix4fv(location, :gl_const.gl_true(), [Mat4.flatten(matrix)])
   end
 end
