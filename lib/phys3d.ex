@@ -107,7 +107,7 @@ defmodule Phys3D do
 
     sensitivity = state.dt / 100_000
     x_offset = (x - lx) * sensitivity
-    y_offset = (y - ly) * sensitivity
+    y_offset = (ly - y) * sensitivity
 
     new_yaw = state.camera.yaw + x_offset
     new_pitch = state.camera.pitch + y_offset
@@ -120,6 +120,7 @@ defmodule Phys3D do
       end
 
     camera = Camera.point(state.camera, new_pitch, new_yaw)
+    # camera = Mat4.look_at(state.camera.pos, Vec3.new(0, 0, 0), state.camera.up)
 
     state = %{
       state
@@ -181,7 +182,7 @@ defmodule Phys3D do
 
     :gl.useProgram(shader_program)
 
-    :gl.polygonMode(:gl_const.gl_front_and_back(), :gl_const.gl_fill())
+    :gl.polygonMode(:gl_const.gl_front_and_back(), :gl_const.gl_line())
     :gl.uniform3f(state.locations.color, 0.1, 0.2, 0.3)
 
     set_uniform_matrix(state.locations.model, state.matrices.model)
@@ -263,6 +264,7 @@ defmodule Phys3D do
     model = Mat4.identity()
     view = Mat4.look_at(camera.pos, Vec3.add(camera.pos, camera.front), camera.up)
     projection = Mat4.perspective(:math.pi() / 4, 1200.0 / 800.0, 0.1, 100.0)
+    # projection = Mat4.ortho(-1.0, 10.0, -1.0, 10.0, -1.0, 10.0)
 
     {model, view, projection}
   end

@@ -50,7 +50,7 @@ defmodule Phys3D.OpenGL do
   defp do_enables() do
     :gl.enable(:gl_const.gl_depth_test)
     :gl.enable(:gl_const.gl_multisample)
-    # :gl.enable(:gl_const.gl_cull_face)
+    :gl.enable(:gl_const.gl_cull_face)
   end
 
 end

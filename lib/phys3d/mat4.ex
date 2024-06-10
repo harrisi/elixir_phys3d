@@ -160,6 +160,7 @@ defmodule Phys3D.Mat4 do
       {s2, u2, -f2, 0.0},
       {-Vec3.dot(s, eye), -Vec3.dot(u, eye), Vec3.dot(f, eye), 1.0}
     }
+    |> transpose
   end
 
   @spec perspective(fovy :: float(), aspect :: float(), near :: float(), far :: float()) :: t()
@@ -172,8 +173,18 @@ defmodule Phys3D.Mat4 do
       Vec4.new(f, 0, 0, 0),
       Vec4.new(0, y_scale, 0, 0),
       Vec4.new(0, 0, (far + near) / (near - far), (2 * far * near) / (near - far)),
-      Vec4.new(0, 0, -1, 0)
+      Vec4.new(0, 0, -1.0, 0)
     }
+    # f = 1.0 / :math.tan(fovy / 2)
+    # nf = 1 / (near - far)
+
+    # {
+    #   {f / aspect, 0.0, 0.0, 0.0},
+    #   {0.0, f, 0.0, 0.0},
+    #   {0.0, 0.0, (far + near) * nf, -1.0},
+    #   {0.0, 0.0, 2 * far * near * nf, 0.0}
+    # }
+
     # {
     #   {f, 0.0, 0.0, 0.0},
     #   {0.0, f, 0.0, 0.0},
