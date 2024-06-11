@@ -1,4 +1,5 @@
 defmodule Phys3D do
+  alias Phys3D.Vec4
   alias Phys3D.Model
   alias Phys3D.Mesh
   alias Phys3D.Sphere
@@ -93,6 +94,10 @@ defmodule Phys3D do
       :wxWindow.setCursor(state.canvas, :wx_const.wx_null_cursor())
     end
 
+    if key_code == ?C do
+      IO.inspect(state)
+    end
+
     {:noreply, state}
   end
 
@@ -105,7 +110,7 @@ defmodule Phys3D do
   def handle_event(wx(event: wxMouse(type: :motion, x: x, y: y)), state) do
     {lx, ly} = unless state.last_x, do: {x, y}, else: {state.last_x, state.last_y}
 
-    sensitivity = state.dt / 100_000
+    sensitivity = state.dt / 1_00_000
     x_offset = (x - lx) * sensitivity
     y_offset = (ly - y) * sensitivity
 
@@ -122,11 +127,13 @@ defmodule Phys3D do
     camera = Camera.point(state.camera, new_pitch, new_yaw)
     # camera = Mat4.look_at(state.camera.pos, Vec3.new(0, 0, 0), state.camera.up)
 
+    # :wxWindow.warpPointer(state.frame, 600, 400)
+
     state = %{
       state
       | camera: camera,
         last_x: x,
-        last_y: y
+        last_y: y,
     }
 
     {:noreply, state}
@@ -144,9 +151,9 @@ defmodule Phys3D do
   end
 
   def handle_info(:update, state) do
-    # :wx.batch(fn ->
+    :wx.batch(fn ->
       render(state)
-    # end)
+    end)
 
     state = update_camera(state)
 
@@ -172,33 +179,22 @@ defmodule Phys3D do
     draw(state)
     :wxGLCanvas.swapBuffers(canvas)
     send(self(), :update)
-    # IO.inspect(state)
+    # IO.inspect(state.dt)
     :ok
   end
 
   defp draw(%{shader_program: shader_program, mesh: mesh} = state) do
     :gl.clearColor(0.4, 0.5, 0.6, 1.0)
-    :gl.clear(:gl_const.gl_color_buffer_bit() ||| :gl_const.gl_depth_buffer_bit())
+    :gl.clear(:gl_const.gl_color_buffer_bit ||| :gl_const.gl_depth_buffer_bit)
 
     :gl.useProgram(shader_program)
 
-    :gl.polygonMode(:gl_const.gl_front_and_back(), :gl_const.gl_line())
+    :gl.polygonMode(:gl_const.gl_front_and_back, :gl_const.gl_line)
     :gl.uniform3f(state.locations.color, 0.1, 0.2, 0.3)
 
     set_uniform_matrix(state.locations.model, state.matrices.model)
     set_uniform_matrix(state.locations.view, state.matrices.view)
     set_uniform_matrix(state.locations.projection, state.matrices.projection)
-
-    # :gl.bindVertexArray(vao)
-
-    # :gl.drawElements(:gl_const.gl_triangles, 36, :gl_const.gl_unsigned_int, 0)
-    # :gl.drawElementsInstanced(
-    #   :gl_const.gl_triangles(),
-    #   36,
-    #   :gl_const.gl_unsigned_int(),
-    #   0,
-    #   50 * 50 * 50
-    # )
 
     Mesh.draw(mesh, shader_program)
 
@@ -206,7 +202,7 @@ defmodule Phys3D do
   end
 
   def update_camera(%{camera: camera, keys: keys} = state) do
-    speed = state.dt / 100
+    speed = state.dt / 1_000
     new_pos = camera.pos
 
     new_pos =
@@ -262,9 +258,38 @@ defmodule Phys3D do
 
   def create_matrices(%{camera: camera}) do
     model = Mat4.identity()
+    t = :erlang.system_time(:millisecond) / 1000
     view = Mat4.look_at(camera.pos, Vec3.add(camera.pos, camera.front), camera.up)
-    projection = Mat4.perspective(:math.pi() / 4, 1200.0 / 800.0, 0.1, 100.0)
-    # projection = Mat4.ortho(-1.0, 10.0, -1.0, 10.0, -1.0, 10.0)
+    # translate
+    |> Mat4.multiply_mat({
+      Vec4.new(1, 0, 0, :math.sin(t)),
+      Vec4.new(0, 1, 0, :math.cos(t)),
+      Vec4.new(0, 0, 1, 0),
+      Vec4.new(0, 0, 0, 1)
+    })
+    # rotate z
+    |> Mat4.multiply_mat({
+      Vec4.new(:math.cos(t), -:math.sin(t), 0, 0),
+      Vec4.new(:math.sin(t), :math.cos(t), 0, 0),
+      Vec4.new(0, 0, 1, 0),
+      Vec4.new(0, 0, 0, 1)
+    })
+    # rotate y
+    |> Mat4.multiply_mat({
+      Vec4.new(:math.cos(t), 0, :math.sin(t), 0),
+      Vec4.new(0, 1, 0, 0),
+      Vec4.new(-:math.sin(t), 0, :math.cos(t), 0),
+      Vec4.new(0, 0, 0, 1)
+    })
+    # rotate x
+    |> Mat4.multiply_mat({
+      Vec4.new(1, 0, 0, 0),
+      Vec4.new(0, :math.cos(t), -:math.sin(t), 0),
+      Vec4.new(0, :math.sin(t), :math.cos(t), 0),
+      Vec4.new(0, 0, 0, 1)
+    })
+    # huh. why is the aspect ratio defined in y/x for proper rendering..?
+    projection = Mat4.perspective(:math.pi() / 4, 800.0 / 1200.0, 0.1, 100.0)
 
     {model, view, projection}
   end

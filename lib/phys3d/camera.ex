@@ -28,4 +28,8 @@ defmodule Phys3D.Camera do
 
     %__MODULE__{camera | front: front, pitch: pitch, yaw: yaw}
   end
+
+  defp lerp(a, b) do
+    a + 0.5 * (b - a)
+  end
 end
